@@ -17,20 +17,20 @@ const apiURI = process.env.TRADING_ENV === "real" ? "https://api.pro.coinbase.co
 const websocketURI = process.env.TRADING_ENV === "real" ? "wss://ws-feed.pro.coinbase.com" : "wss://ws-feed-public.sandbox.pro.coinbase.com";
 
 //Trading config:
-//Global constants, consider tuning these values to optimize the bot's trading: 
+//Global constants, consider tuning these values to optimize the bot's trading:
 const sellPositionDelta = Number(process.env.SELL_POSITION_DELTA) || .02; //The amount of change between peak and valley to trigger a sell off
 const buyPositionDelta = Number(process.env.BUY_POSITION_DELTA) || .015; //The amount of change between the valley and peak price to trigger a buy in
 const orderPriceDelta = Number(process.env.ORDER_PRICE_DELTA) || .001; //The amount of extra room to give the sell/buy orders to go through
-const stopLossDelta = Number(process.env.STOP_LOSS_DELTA) || .11; //The percent of loss allowed before selling and buying a lower position.
+const stopLossDelta = Number(process.env.STOP_LOSS_DELTA) || .04; //The percent of loss allowed before selling and buying a lower position.
 
 //Currency config:
-//The pieces of the product pair, this is the two halves of coinbase product pair (examples of product pairs: BTC-USD, DASH-BTC, ETH-USDC). For BTC-USD the base currency is BTC and the quote currency is USD 
-const baseCurrencyName = process.env.BASE_CURRENCY_NAME || "BTC";
+//The pieces of the product pair, this is the two halves of coinbase product pair (examples of product pairs: BTC-USD, DASH-BTC, ETH-USDC). For BTC-USD the base currency is BTC and the quote currency is USD
+const baseCurrencyName = process.env.BASE_CURRENCY_NAME || "MANA";
 const quoteCurrencyName = process.env.QUOTE_CURRENCY_NAME || "USD";
 
 //Profile config:
 //Coinbase portfolios (profiles):
-const tradingProfileName = process.env.TRADING_PROFILE_NAME || "BTC trader"; //This is the name of the profile you want the bot to trade in
+const tradingProfileName = process.env.TRADING_PROFILE_NAME || "Mana Trading"; //This is the name of the profile you want the bot to trade in
 const depositProfileName = process.env.DEPOSIT_PROFILE_NAME || "default"; //This is the name of the profile you want to deposit some profits to
 
 //Deposit config:
@@ -59,8 +59,8 @@ let currentPrice;
 
 /**
  * Makes the program sleep to avoid hitting API limits and let the websocket update
- * 
- * @param {number} ms -> the number of milliseconds to wait 
+ *
+ * @param {number} ms -> the number of milliseconds to wait
  */
 function sleep(ms) {
     return new Promise((resolve) => {
@@ -70,8 +70,8 @@ function sleep(ms) {
 
 /**
  * Creates the websocket object and turns it on to update the currentPrice
- * 
- * @param {string} productPair 
+ *
+ * @param {string} productPair
  */
 function listenForPriceUpdates(productPair) {
     if (productPair == null) {
@@ -117,9 +117,9 @@ function listenForPriceUpdates(productPair) {
 
 /**
  * Loops forever until the conditions are right to attempt to sell the position. Every loop sleeps to let the currentPrice update
- * then updates the lastPeak/lastValley price as appropriate, if the price hits a new valley price it will check if the conditions are 
+ * then updates the lastPeak/lastValley price as appropriate, if the price hits a new valley price it will check if the conditions are
  * met to sell the position and call the method if appropriate.
- * 
+ *
  * @param {number} balance              The amount of currency being traded with
  * @param {number} lastPeakPrice        Tracks the price highs
  * @param {number} lastValleyPrice      Tracks the price lows
@@ -127,7 +127,7 @@ function listenForPriceUpdates(productPair) {
  * @param {Object} positionInfo         Contains 3 fields, positionExists (bool), positionAcquiredPrice (number), and positionAcquiredCost(number)
  * @param {Object} productInfo          Contains information about the quote/base increment for the product pair
  * @param {Object} depositConfig        Contains information about whether to do a deposit and for how much after a sell
- * @param {Object} tradingConfig        Contains information about the fees and deltas 
+ * @param {Object} tradingConfig        Contains information about the fees and deltas
  */
 async function losePosition(balance, lastPeakPrice, lastValleyPrice, accountIds, positionInfo, productInfo, depositConfig, tradingConfig) {
     try {
@@ -139,7 +139,7 @@ async function losePosition(balance, lastPeakPrice, lastValleyPrice, accountIds,
                 lastPeakPrice = currentPrice;
                 lastValleyPrice = currentPrice;
 
-                logger.debug(`Sell Position, LPP: ${lastPeakPrice}`);
+                logger.info(`New high: ${lastPeakPrice}. Recalculating...`);
             } else if (lastValleyPrice > currentPrice) {
                 //New valley hit, track valley and check sell conditions
                 lastValleyPrice = currentPrice;
@@ -149,7 +149,7 @@ async function losePosition(balance, lastPeakPrice, lastValleyPrice, accountIds,
                 const receivedValue = (lowestSellPrice * balance) - ((lowestSellPrice * balance) * tradingConfig.highestFee);
                 const stopLossPrice = positionInfo.positionAcquiredPrice - (positionInfo.positionAcquiredPrice * stopLossDelta);
 
-                logger.debug(`Sell Position, LVP: ${lastValleyPrice} needs to be less than or equal to ${target} to sell and the receivedValue: ${receivedValue} needs to be greater than the positionAcquiredCost: ${positionInfo.positionAcquiredCost} unless the LVP: ${lastValleyPrice} is less than the stop loss price: ${stopLossPrice}`);
+                logger.info(`New low: ${lastValleyPrice}. Needs to be less than or equal to ${target} to sell and the receivedValue: ${receivedValue} needs to be greater than the positionAcquiredCost: ${positionInfo.positionAcquiredCost} unless the LVP: ${lastValleyPrice} is less than the stop loss price: ${stopLossPrice}`);
 
                 if ((lastValleyPrice <= target) && (receivedValue > positionInfo.positionAcquiredCost)) {
                     logger.info("Attempting to sell position...");
@@ -188,15 +188,15 @@ async function losePosition(balance, lastPeakPrice, lastValleyPrice, accountIds,
 
 /**
  * Loops forever until the conditions are right to attempt to buy a position. Every loop sleeps to let the currentPrice update
- * then updates the lastPeak/lastValley price as appropriate, if the price hits a new peak price it will check if the conditions are 
+ * then updates the lastPeak/lastValley price as appropriate, if the price hits a new peak price it will check if the conditions are
  * met to buy the position and call the method if appropriate.
- * 
+ *
  * @param {number} balance              The amount of currency being traded with
  * @param {number} lastPeakPrice        Tracks the price highs
  * @param {number} lastValleyPrice      Tracks the price lows
  * @param {Object} positionInfo         Contains 3 fields, positionExists (bool), positionAcquiredPrice (number), and positionAcquiredCost(number)
  * @param {Object} productInfo          Contains information about the quote/base increment for the product pair
- * @param {Object} tradingConfig        Contains information about the fees and deltas 
+ * @param {Object} tradingConfig        Contains information about the fees and deltas
  */
 async function gainPosition(balance, lastPeakPrice, lastValleyPrice, positionInfo, productInfo, tradingConfig) {
     try {
@@ -209,7 +209,7 @@ async function gainPosition(balance, lastPeakPrice, lastValleyPrice, positionInf
 
                 const target = lastValleyPrice + (lastValleyPrice * buyPositionDelta);
 
-                logger.debug(`Buy Position, LPP: ${lastPeakPrice} needs to be greater than or equal to ${target} to buy`);
+                logger.info(`New high: ${lastPeakPrice}. Will buy at ${target}.`);
 
                 if (lastPeakPrice >= target) {
                     logger.info("Attempting to buy position...");
@@ -230,7 +230,7 @@ async function gainPosition(balance, lastPeakPrice, lastValleyPrice, positionInf
                 lastPeakPrice = currentPrice;
                 lastValleyPrice = currentPrice;
 
-                logger.debug(`Buy Position, LVP: ${lastValleyPrice}`);
+                logger.info(`New low: ${lastValleyPrice}. Recalculating...`);
             }
         }
     } catch (err) {
@@ -243,7 +243,7 @@ async function gainPosition(balance, lastPeakPrice, lastValleyPrice, positionInf
 
 /**
  * Acquires some account ID information to be used for storing and retrieving information and depositing funds after a sell.
- * 
+ *
  * @param {Object} productInfo productInfo contains the base and quote currencies being traded with needed to grab the correct account IDs
  * @return {Object} accountObject contains the needed account IDs and profile IDs needed for checking balances and making transfers
  */
@@ -293,7 +293,7 @@ async function getAccountIDs(productInfo) {
  * Gets information about the product being traded that the bot can use to determine how
  * accurate the size and quote values for the order needs to be. This method parses the base and quote increment
  * strings in order to determine to what precision the size and price parameters need to be when placing an order.
- * 
+ *
  * @param {object} productInfo This object gets updated directly
  */
 async function getProductInfo(productInfo) {
@@ -346,7 +346,7 @@ async function getProductInfo(productInfo) {
 
 /**
  * Retrieves the current maker and taker fees and returns the highest one as a number
- * 
+ *
  * @param {number} highestFee The highest fee between the taker and maker fee
  */
 async function returnHighestFee() {
@@ -372,7 +372,7 @@ async function returnHighestFee() {
 
 /**
  * This method is the entry point of the momentum strategy. It does some first time initialization then begins an infinite loop.
- * The loop checks the position info to decide if the bot needs to try and buy or sell, it also checks if there's an available 
+ * The loop checks the position info to decide if the bot needs to try and buy or sell, it also checks if there's an available
  * balance to be traded with. Then it calls gainPosition or losePosition appropiately and waits for them to finish and repeats.
  */
 async function momentumStrategyStart() {
