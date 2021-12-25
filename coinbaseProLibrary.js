@@ -1,7 +1,7 @@
 /*
-*   The official coinbase-pro library (https://www.npmjs.com/package/coinbase-pro) has been deprecated as of January 16th, 2020. 
-*   The coinbase-pro library still works but it doesn't support all of the API endpoints being used by this project. As a work 
-*   around, this file will create a library that supports those other methods needed for this bot to run. 
+*   The official coinbase-pro library (https://www.npmjs.com/package/coinbase-pro) has been deprecated as of January 16th, 2020.
+*   The coinbase-pro library still works but it doesn't support all of the API endpoints being used by this project. As a work
+*   around, this file will create a library that supports those other methods needed for this bot to run.
 */
 const crypto = require("crypto");
 const axios = require("axios");
@@ -18,11 +18,11 @@ const numberOfAttempts = 3;
 class coinbaseProLib {
     /**
      * Summary: constructs an instance of this class that can be used to make the API endpoint calls
-     * 
-     * @param {string} apiKey 
-     * @param {string} apiSecret 
-     * @param {string} apiPassphrase 
-     * @param {string} apiURI 
+     *
+     * @param {string} apiKey
+     * @param {string} apiSecret
+     * @param {string} apiPassphrase
+     * @param {string} apiURI
      */
     constructor(apiKey, apiSecret, apiPassphrase, apiURI) {
         this.apiKey = apiKey;
@@ -33,11 +33,11 @@ class coinbaseProLib {
 
     /**
      * Creates the CB-ACCESS-SIGN header needed for executing a coinbase pro REST API endpoint call.
-     * 
-     * @param {string} method 
-     * @param {string} requestPath 
-     * @param {string} body 
-     * 
+     *
+     * @param {string} method
+     * @param {string} requestPath
+     * @param {string} body
+     *
      * @return {string} CB-ACCESS-SIGN value
      */
     async signMessage(method, requestPath, body) {
@@ -78,7 +78,7 @@ class coinbaseProLib {
     /**
      * Calls the endpoint /profiles to get a list of the available portfolio (profile) IDs for the account
      * Check the documentation for more information on this endpoint.
-     * 
+     *
      * @return {string} API call response data
      */
     async getProfiles() {
@@ -122,9 +122,9 @@ class coinbaseProLib {
     /**
      * Calls the endpoint /fees to get the current maker and taker fees
      * Check the documentation for more information on this endpoint.
-     * 
+     *
      * Re-attempts: 3
-     * 
+     *
      * @return {array} API call response data
      */
     async getFees() {
@@ -136,6 +136,7 @@ class coinbaseProLib {
                 const requestPath = "/fees";
                 const body = null;
                 const timestamp = Date.now() / 1000;
+
 
                 const sign = await this.signMessage(method, requestPath, body);
 
@@ -169,14 +170,14 @@ class coinbaseProLib {
      * Calls the /profiles/transfer endpoint that will let you transfer some currency from one profile to another.
      * The fromProfileID must be the profile linked to the API key provided, this is where the funds are sourced.
      * Check the coinbase pro api docs for more information on the restrictions around this endpoint.
-     * 
-     * @param {string} fromProfileID 
-     * @param {string} toProfileID 
-     * @param {string} currency 
-     * @param {string} amount 
-     * 
+     *
+     * @param {string} fromProfileID
+     * @param {string} toProfileID
+     * @param {string} currency
+     * @param {string} amount
+     *
      * Re-attempts: 3
-     * 
+     *
      * @return {string} data from the response
      */
     async profileTransfer(fromProfileID, toProfileID, currency, amount) {

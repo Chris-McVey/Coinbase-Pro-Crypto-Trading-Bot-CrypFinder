@@ -138,7 +138,7 @@ async function losePosition(balance, lastPeakPrice, lastValleyPrice, accountIds,
                 lastPeakPrice = currentPrice;
                 lastValleyPrice = currentPrice;
 
-                logger.debug(`New peak: ${lastPeakPrice}`);
+                logger.info(`New peak: ${lastPeakPrice}`);
             } else if (lastValleyPrice > currentPrice) {
                 //New valley hit, track valley and check sell conditions
                 lastValleyPrice = currentPrice;
@@ -147,7 +147,7 @@ async function losePosition(balance, lastPeakPrice, lastValleyPrice, accountIds,
                 const lowestSellPrice = lastValleyPrice - (lastValleyPrice * orderPriceDelta);
                 const receivedValue = (lowestSellPrice * balance) - ((lowestSellPrice * balance) * tradingConfig.highestFee);
 
-                logger.debug(`New low: ${lastValleyPrice} needs to be less than or equal to ${target} to sell and the receivedValue: ${receivedValue} needs to be greater than the positionAcquiredCost: ${positionInfo.positionAcquiredCost}`);
+                logger.info(`New low: ${lastValleyPrice} needs to be less than or equal to ${target} to sell and the receivedValue: ${receivedValue} needs to be greater than the positionAcquiredCost: ${positionInfo.positionAcquiredCost}`);
 
                 if ((lastValleyPrice <= target) && (receivedValue > positionInfo.positionAcquiredCost)) {
                     logger.info("Attempting to sell position...");
@@ -195,7 +195,7 @@ async function gainPosition(balance, lastPeakPrice, lastValleyPrice, positionInf
 
                 const target = lastValleyPrice + (lastValleyPrice * buyPositionDelta);
 
-                logger.debug(`New peak: ${lastPeakPrice} needs to be greater than or equal to ${target} to buy`);
+                logger.info(`New peak: ${lastPeakPrice} needs to be greater than or equal to ${target} to buy`);
 
                 if (lastPeakPrice >= target) {
                     logger.info("Attempting to buy position...");
@@ -216,7 +216,7 @@ async function gainPosition(balance, lastPeakPrice, lastValleyPrice, positionInf
                 lastPeakPrice = currentPrice;
                 lastValleyPrice = currentPrice;
 
-                logger.debug(`Buy Position, LVP: ${lastValleyPrice}`);
+                logger.info(`Buy Position, LVP: ${lastValleyPrice}`);
             }
         }
     } catch (err) {
